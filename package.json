@@ -1,5 +1,12 @@
 {
+  "scripts": {
+    "test": "jest"
+  },
   "devDependencies": {
-    "@types/chrome": "^0.1.4"
+    "@types/chrome": "^0.1.4",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.3.0",
+    "jest": "^30.0.5",
+    "ts-jest": "^29.4.1"
   }
 }

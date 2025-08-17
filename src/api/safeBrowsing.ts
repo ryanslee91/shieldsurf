@@ -38,7 +38,7 @@ export async function checkUrlSafety(
 
     const data: SafeBrowsingResponse = await response.json();
 
-    if (data && data.matches) {
+    if (Array.isArray(data.matches) && data.matches.length > 0) {
       console.warn("⚠️ 위험한 URL", data.matches);
       return { safe: false, details: data.matches };
     } else {

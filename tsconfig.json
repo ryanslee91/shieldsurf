@@ -18,7 +18,7 @@
       "@api/*": ["src/api/*"],
       "@utils/*": ["src/utils/*"]
     },
-    "types": ["chrome"],         // 크롬 확장 타입 로드
+    "types": ["chrome", "jest", "node"],         // 크롬 확장 타입 로드
 
     // 출력 관련
     "outDir": "dist",            // 컴파일 결과 경로
