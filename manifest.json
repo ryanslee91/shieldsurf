@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SafeBrowse AI",
+  "name": "ShieldSurf",
   "version": "0.1",
   "description": "실시간 URL/파일 위협 인텔리전스 확장",
   "permissions": [
@@ -12,8 +12,14 @@
     "https://safebrowsing.googleapis.com/"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background/background.ts"
   },
+    "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/contentScript.ts"]
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

@@ -1,10 +1,15 @@
 import { SafeBrowsingRequest, SafeBrowsingResponse, ThreatMatch } from "../types";
-import { API_KEY } from "./config";
+import { API_KEY, TEST_MODE } from "./config";
 
 export async function checkUrlSafety(
   urlToCheck: string,
-): Promise<{ safe: boolean | null; details?: ThreatMatch[]; error?: unknown }> {
+): Promise<{ safe: boolean | null; details?: ThreatMatch[]; error?: unknown; reason?: string; }> {
   const endpoint = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`;
+
+  if (TEST_MODE) {
+    console.log('TEST MODE');
+    return { safe: false, reason: 'Mock threat for testing' }
+  }
 
   const requestBody: SafeBrowsingRequest = {
     client: {
