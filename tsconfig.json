@@ -1,5 +1,29 @@
 {
   "compilerOptions": {
-    "types": ["chrome"],
-  }
+    // 언어 레벨 & 모듈 설정
+    "target": "ES2020",          // 빌드 후 JS 버전
+    "lib": ["ES2020", "DOM"],    // 사용할 내장 라이브러리
+    "module": "ESNext",          // 모듈 방식
+    "moduleResolution": "Node",  // 모듈 해석 방식
+
+    // 안전성 옵션
+    "strict": true,              // 모든 엄격 모드 활성화
+    "noImplicitAny": true,       // 암시적 any 금지
+    "strictNullChecks": true,    // null/undefined 엄격 체크
+    "skipLibCheck": true,        // 라이브러리 타입 검사 생략(빌드 속도 ↑)
+
+    // 경로 & 타입 관련
+    "baseUrl": ".",              // 상대경로 단축 설정 가능
+    "paths": {
+      "@api/*": ["src/api/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+    "types": ["chrome"],         // 크롬 확장 타입 로드
+
+    // 출력 관련
+    "outDir": "dist",            // 컴파일 결과 경로
+    "sourceMap": true            // 디버그용 소스맵 생성
+  },
+  "include": ["src"],            // TS가 분석할 경로
+  "exclude": ["node_modules"]    // 제외할 경로
 }
