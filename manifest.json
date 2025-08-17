@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "SafeBrowse AI",
+  "version": "0.1",
+  "description": "실시간 URL/파일 위협 인텔리전스 확장",
+  "permissions": [
+    "storage",
+    "downloads",
+    "tabs",
+    "scripting",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}
