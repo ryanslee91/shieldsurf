@@ -1,0 +1,27 @@
+# Node.js 관련 (혹시 npm 사용 시)
+node_modules/
+package-lock.json
+
+# 빌드 결과물
+dist/
+build/
+
+# 크롬 확장 임시 파일
+*.crx
+*.pem
+*.zip
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+
+# 환경 설정 파일
+.env
+.env.local
+
+# 로그 및 캐시
+*.log
+.cache/
+
+# 민감한 정보를 담고있는 config 파일
+src/api/config.ts
