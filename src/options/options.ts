@@ -1,4 +1,5 @@
 import { DangerLog } from "src/types";
+import './options.css';
 
 document.addEventListener("DOMContentLoaded", () => {
   const logTableBody = document.querySelector("#logTable tbody");

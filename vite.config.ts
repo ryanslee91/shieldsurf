@@ -14,11 +14,26 @@ export default defineConfig({
     rollupOptions: {
       input: {
         background: resolve(__dirname, 'src/background/background.ts'),
+        options:    resolve(__dirname, 'src/options/options.ts'),
         // 팝업 없는 버전이라면 popup 엔트리 불필요
       },
       output: {
-        entryFileNames: '[name].js',
-        assetFileNames: '[name].[ext]'
+        entryFileNames: chunk => {
+          return chunk.name === 'options'
+            ? 'options/[name].js'
+            : '[name].js';
+        },
+
+        assetFileNames: assetInfo => {
+          // assetInfo.name 예시: 'options.css', 'background.css' 등
+          const name = assetInfo.name || '';
+          // options 관련 CSS만 폴더 안으로
+          if (name.startsWith('options') && name.endsWith('.css')) {
+            return 'options/[name].[ext]';
+          }
+          // 나머지는 기본 플랫
+          return '[name].[ext]';
+        }
       }
     },
     emptyOutDir: true
