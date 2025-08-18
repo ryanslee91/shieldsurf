@@ -29,3 +29,8 @@ export interface ThreatMatch {
 export interface SafeBrowsingResponse {
   matches?: ThreatMatch[];
 }
+
+export interface DangerLog {
+  time: string;
+  url: string;
+}

@@ -1,3 +1,4 @@
+import { logThreat } from "@utils/logger";
 import { checkUrlSafety } from "../api/safeBrowsing";
 
 // 공통 배지 스타일 설정 함수
@@ -16,6 +17,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
     checkUrlSafety(tab.url)
       .then((result) => {
+        console.log('API response: ', result);
         if (result.safe === true) {
           setBadge(tabId, "SAFE", "#2ecc71"); // 초록
         } else if (result.safe === false) {
@@ -26,6 +28,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             title: "⚠ 위험한 사이트 탐지",
             message: `현재 페이지: ${tab.url}`,
           });
+          logThreat(tab.url!);
         } else {
           setBadge(tabId, "???", "gray");
         }
