@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         background: resolve(__dirname, 'src/background/background.ts'),
         options:    resolve(__dirname, 'src/options/options.ts'),
+        content:    resolve(__dirname, 'src/content/content.ts'),
         // 팝업 없는 버전이라면 popup 엔트리 불필요
       },
       output: {

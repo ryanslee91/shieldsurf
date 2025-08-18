@@ -34,3 +34,13 @@ export interface DangerLog {
   time: string;
   url: string;
 }
+
+interface WarningMessage {
+  action: "showWarning";
+  domain: string;
+}
+
+interface WhiteListMessage {
+  action: "addToWhiteList";
+  domain: string;
+}
