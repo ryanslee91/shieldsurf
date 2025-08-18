@@ -5,6 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const logTableBody = document.querySelector("#logTable tbody");
   const clearBtn = document.getElementById("clearLogs");
 
+  chrome.action.onClicked.addListener(() => {
+    chrome.runtime.openOptionsPage();
+  })
+
   // 📌 로그 불러오기
   chrome.storage.local.get({ threatLogs: [] }, (data) => {
     const logs: DangerLog[] = data.threatLogs;
