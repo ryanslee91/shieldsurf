@@ -24,6 +24,8 @@ ShieldSurf is a Chrome extension that protects users from malicious websites in 
 ## 🔹 Planned Features
 - **File Download Security Check**: Automatically scans downloaded files for threats before they are opened.
 - **Suspicious Email Content Scan & Censorship**: Detects and removes harmful elements in suspicious emails, blocking phishing or malware payloads.
+- Enhanced Whitelist Management: Users can add, remove, and edit trusted domains.
+- Blacklist Support: Users can add specific domains to a permanent block list for proactive threat prevention.
 
 ---
 
@@ -55,6 +57,8 @@ ShieldSurf는 Google Safe Browsing API를 기반으로 웹 탐색 중 위험한 
 ## 🔹 향후 고려 기능
 - **파일 다운로드 위험성 검사**: 다운로드한 파일을 열기 전에 악성 여부 자동 검사
 - **의심 이메일 콘텐츠 스캔 및 위험 요소 제거**: 의심되는 이메일 내용을 스캔해 피싱·악성 코드 가능성 차단
+- 화이트리스트 관리 고도화: 사용자가 도메인 추가·삭제·수정 가능
+- 블랙리스트 지원: 특정 도메인을 강제 차단 목록에 추가, 위험 사이트 사전 차단
 
 ---
 
