@@ -1,119 +1,190 @@
 import { logThreat } from "@utils/logger";
 import { checkUrlSafety } from "../api/safeBrowsing";
 
-let whiteList: string[] = [];
+// ====== 상수 ======
+const COLORS = {
+  SAFE: "#2ecc71",
+  BAD: "#e74c3c",
+  GRAY: "gray",
+  DARK_GRAY: "darkgray"
+};
 
+let whiteList: string[] = [];
+let pendingRedirects: Record<number, { url: string; ruleId: number }> = {};
+
+// ====== 초기 로드 ======
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.get("whiteList", (data) => {
+    whiteList = data.whiteList || [];
+  });
+});
+
+// ====== 공통 유틸 ======
 function setBadge(tabId: number, text: string, color: string) {
   chrome.action.setBadgeText({ text, tabId });
   chrome.action.setBadgeBackgroundColor({ color, tabId });
 }
 
-// 안전하게 메시지를 보내는 함수
-function safeSendMessage(tabId: number, message: any) {
-  chrome.tabs.sendMessage(tabId, message, (res) => {
-    if (chrome.runtime.lastError) {
-      console.warn(`⚠ 메시지 전송 실패(tabId: ${tabId}):`, chrome.runtime.lastError.message);
-      return;
-    }
-    console.log("content 응답:", res);
+function addToWhiteList(domain: string) {
+  if (!whiteList.includes(domain)) {
+    whiteList.push(domain);
+    chrome.storage.local.set({ whiteList });
+  }
+}
+
+async function addBlockRule(domain: string): Promise<number> {
+  const ruleId = Math.floor(Date.now() % 1000000);
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    addRules: [{
+      id: ruleId,
+      priority: 1,
+      action: { type: "block" },
+      condition: {
+        urlFilter: `||${domain}`,
+        resourceTypes: ["main_frame"]
+      }
+    }],
+    removeRuleIds: []
+  });
+  return ruleId;
+}
+
+async function removeBlockRule(ruleId: number) {
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [ruleId]
   });
 }
 
-// content script 동적 주입 후 메시지 전송
-function injectAndSend(tabId: number, message: any) {
-  chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] }, () => {
-    if (chrome.runtime.lastError) {
-      console.warn("content script 주입 실패:", chrome.runtime.lastError.message);
-      return;
-    }
-    safeSendMessage(tabId, message);
+function notifyUser(tabId: number, domain: string) {
+  const notificationId = `block-${tabId}`;
+  chrome.notifications.create(notificationId, {
+    type: "basic",
+    iconUrl: "icons/icon128.png",
+    title: "⚠ 위험한 사이트 차단됨",
+    message: `${domain} 접속이 차단되었습니다.\n계속하시겠습니까?`,
+    buttons: [
+      { title: "계속하기" },
+      { title: "취소" }
+    ],
+    requireInteraction: true
   });
 }
 
-chrome.action.onClicked.addListener(() => {
-  chrome.runtime.openOptionsPage();
-});
+// ====== 페이지 이동 감지 및 검사 ======
+chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url, frameId }) => {
+  if (frameId !== 0 || !/^https?:\/\//.test(url)) return;
 
-// 페이지 로드 완료 시 검사
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
-    if (!/^https?:\/\//.test(tab.url)) {
-      console.warn("비웹 URL 스킵:", tab.url);
-      return;
+  const domain = new URL(url).hostname;
+
+  if (whiteList.includes(domain)) {
+    setBadge(tabId, "SAFE", COLORS.SAFE);
+    return;
+  }
+
+  setBadge(tabId, "...", COLORS.GRAY);
+
+  try {
+    const result = await checkUrlSafety(url);
+
+    if (result.safe === true) {
+      setBadge(tabId, "SAFE", COLORS.SAFE);
+    } else if (result.safe === false) {
+      setBadge(tabId, "BAD", COLORS.BAD);
+
+      // 1. 차단 규칙 등록
+      const ruleId = await addBlockRule(domain);
+      pendingRedirects[tabId] = { url, ruleId };
+
+      // 2. 경고 알림
+      notifyUser(tabId, domain);
+
+      // 3. 로그 저장
+      logThreat(url);
+
+      // 4. 안전한 페이지로 이동
+      chrome.tabs.update(tabId, { url: "chrome://newtab" });
+    } else {
+      setBadge(tabId, "???", COLORS.GRAY);
     }
-
-    const domain = new URL(tab.url).hostname;
-
-    if (whiteList.includes(domain)) {
-      setBadge(tabId, "SAFE", "#2ecc71");
-      return;
-    }
-
-    console.log("🔍 URL 자동 검사:", tab.url);
-    setBadge(tabId, "...", "gray");
-
-    checkUrlSafety(tab.url)
-      .then((result) => {
-        if (result.safe === true) {
-          setBadge(tabId, "SAFE", "#2ecc71");
-        } else if (result.safe === false) {
-          setBadge(tabId, "BAD", "#e74c3c");
-
-          // 주입 후 경고 메시지 전송
-          injectAndSend(tabId, { action: "showWarning", domain });
-
-          chrome.notifications.create({
-            type: "basic",
-            iconUrl: "icons/icon128.png",
-            title: "⚠ 위험한 사이트 탐지",
-            message: `현재 페이지: ${tab.url}`,
-          });
-          logThreat(tab.url!);
-        } else {
-          setBadge(tabId, "???", "gray");
-        }
-      })
-      .catch((error) => {
-        console.error("API 호출 오류:", error);
-        setBadge(tabId, "ERR", "darkgray");
-      });
+  } catch (err) {
+    console.error("검사 오류:", err);
+    setBadge(tabId, "ERR", COLORS.DARK_GRAY);
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender) => {
-  if (message.action === "cancelNavigation" && sender.tab?.id) {
-    console.log("사용자가 이동 취소:", message.domain);
-    chrome.tabs.goBack(sender.tab.id, () => {
+// ====== 알림 버튼 클릭 처리 ======
+chrome.notifications.onButtonClicked.addListener(async (notifId, btnIdx) => {
+  const tabId = parseInt(notifId.replace("block-", ""));
+  const redirectData = pendingRedirects[tabId];
+  if (!redirectData) return;
+
+  const { url, ruleId } = redirectData;
+  const domain = new URL(url).hostname;
+
+  if (btnIdx === 0) {
+    // 계속하기 → 차단 해제 + 화이트리스트 등록 + 원래 URL로 이동
+    await removeBlockRule(ruleId);
+    addToWhiteList(domain);
+    chrome.tabs.update(tabId, { url });
+  } else {
+    // 취소 → 이전 페이지 또는 새 탭
+    chrome.tabs.goBack(tabId, () => {
       if (chrome.runtime.lastError) {
-        console.warn("이전 페이지 이동 실패:", chrome.runtime.lastError.message);
+        chrome.tabs.update(tabId, { url: "chrome://newtab" });
       }
     });
   }
+
+  delete pendingRedirects[tabId];
+  chrome.notifications.clear(notifId);
 });
 
-// 다른 스크립트에서 직접 검사 요청 시
+chrome.declarativeNetRequest.getDynamicRules((rules) => {
+  const ids = rules.map(r => r.id);
+  if (ids.length) {
+    chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: ids });
+  }
+});
+
+// ====== 메시지 처리 ======
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "CHECK_URL" && message.url) {
     if (!/^https?:\/\//.test(message.url)) {
-      console.warn("비웹 URL 스킵(메시지):", message.url);
       sendResponse({ safe: null, error: "Non-web URL" });
       return;
     }
 
-    if (message.action === "addToWhiteList") {
-      if (!whiteList.includes(message.domain)) {
-        whiteList.push(message.domain);
-        chrome.storage.local.set({ whiteList });
-      }
+    if (message.action === "addToWhiteList" && message.domain) {
+      addToWhiteList(message.domain);
     }
 
     checkUrlSafety(message.url)
       .then((result) => sendResponse(result))
-      .catch((error) => {
-        console.error("API 호출 중 오류:", error);
-        sendResponse({ safe: null, error });
-      });
+      .catch((err) => sendResponse({ safe: null, error: err }));
 
-    return true; // 비동기 응답
+    return true; // async response
   }
 });
+
+//clear whitelist
+// when not used, comment  it
+// function clearWhiteList() {
+//   whiteList = [];
+//   chrome.storage.local.set({ whiteList: [] });
+//   console.log("Whitelist cleared.")
+// }
+
+// clearWhiteList();
+
+// clearing blocked websites
+// when not used, comment  it
+
+// chrome.declarativeNetRequest.getDynamicRules((rules) => {
+//   const ids = rules.map(r => r.id);
+//   if (ids.length) {
+//     chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: ids });
+//   }
+// });
+
+
+

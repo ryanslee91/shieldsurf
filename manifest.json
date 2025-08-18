@@ -10,14 +10,19 @@
     "scripting",
     "activeTab",
     "notifications",
-    "webNavigation"
+    "webNavigation",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "webRequest",
+    "webRequestBlocking"
   ],
   "host_permissions": [
     "https://safebrowsing.googleapis.com/*",
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
