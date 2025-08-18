@@ -10,8 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   // 📌 로그 불러오기
-  chrome.storage.local.get({ threatLogs: [] }, (data) => {
-    const logs: DangerLog[] = data.threatLogs;
+  chrome.storage.local.get({ dangerLogs: [] }, (data) => {
+    const logs: DangerLog[] = data.dangerLogs;
     logs.forEach((log: DangerLog) => {
       const row = document.createElement("tr");
 
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 📌 로그 전체 삭제
   clearBtn!.addEventListener("click", () => {
     if (confirm("정말 모든 로그를 삭제하시겠습니까?")) {
-      chrome.storage.local.set({ threatLogs: [] }, () => {
+      chrome.storage.local.set({ dangerLogs: [] }, () => {
         logTableBody!.innerHTML = "";
         alert("모든 로그가 삭제되었습니다.");
       });
